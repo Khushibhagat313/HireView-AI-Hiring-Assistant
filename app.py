@@ -274,37 +274,32 @@ with col2:
 # ════════════════════════════════════════════════════════════════════════════
 with col3:
     if not st.session_state.search_submitted:
-        st.markdown("""
-        <div style="background-color: #fdfdfd; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-top: 50px;">
-            <h3 style="color: #3B4F7A; margin-bottom: 20px;">💡 How HireView Works</h3>
-            
-            <div style="line-height: 1.6; font-size: 14px; margin-bottom: 25px;">
-                <div style="margin-bottom: 15px;">
-                    <strong style="color: #3B4F7A;">1. 📝 Enter a job description</strong><br>
-                    <span style="color: #666; margin-left: 22px;">Paste or fill the structured form</span>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <strong style="color: #3B4F7A;">2. 🔍 Click Find Best Candidates</strong><br>
-                    <span style="color: #666; margin-left: 22px;">AI matches from 3,500+ resumes</span>
-                </div>
-                <div style="margin-bottom: 15px;">
-                    <strong style="color: #3B4F7A;">3. 👤 Click any candidate card</strong><br>
-                    <span style="color: #666; margin-left: 22px;">Get AI feedback and insights</span>
-                </div>
-            </div>
-            
-            <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0; display: block !important;">
-            
-            <h4 style="color: #4A7C6F; margin-bottom: 15px;">✨ Things you can ask me:</h4>
-            <ul style="color: #4A7C6F; font-size: 14px; line-height: 1.8; list-style-type: none; padding-left: 0;">
-                <li>• "Compare top 3 candidates"</li>
-                <li>• "Who has the most experience?"</li>
-                <li>• "Find candidates strong in Python"</li>
-                <li>• "Validate how scores were calculated"</li>
-                <li>• "What are this candidate's gaps?"</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("""<div style="background-color: #fdfdfd; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-top: 50px;">
+<h3 style="color: #3B4F7A; margin-bottom: 20px;">💡 How HireView Works</h3>
+<div style="line-height: 1.6; font-size: 14px; margin-bottom: 25px;">
+<div style="margin-bottom: 15px;">
+<strong style="color: #3B4F7A;">1. 📝 Enter a job description</strong><br>
+<span style="color: #666; margin-left: 22px;">Paste or fill the structured form</span>
+</div>
+<div style="margin-bottom: 15px;">
+<strong style="color: #3B4F7A;">2. 🔍 Click Find Best Candidates</strong><br>
+<span style="color: #666; margin-left: 22px;">AI matches from 3,500+ resumes</span>
+</div>
+<div style="margin-bottom: 15px;">
+<strong style="color: #3B4F7A;">3. 👤 Click any candidate card</strong><br>
+<span style="color: #666; margin-left: 22px;">Get AI feedback and insights</span>
+</div>
+</div>
+<hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0; display: block !important;">
+<h4 style="color: #4A7C6F; margin-bottom: 15px;">✨ Things you can ask me:</h4>
+<ul style="color: #4A7C6F; font-size: 14px; line-height: 1.8; list-style-type: none; padding-left: 0;">
+<li>• "Compare top 3 candidates"</li>
+<li>• "Who has the most experience?"</li>
+<li>• "Find candidates strong in Python"</li>
+<li>• "Validate how scores were calculated"</li>
+<li>• "What are this candidate's gaps?"</li>
+</ul>
+</div>""", unsafe_allow_html=True)
     else:
         selected = st.session_state.hiring_state.get("selected_candidate")
 
