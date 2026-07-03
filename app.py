@@ -75,7 +75,12 @@ def load_resources():
     coll = get_collection(client)
     return model, client, coll
 
-model, client, coll = load_resources()
+try:
+    model, client, coll = load_resources()
+except Exception as e:
+    st.error(f"⚠️ Failed to load AI models: {e}")
+    st.info("This usually means the server ran out of memory. Please try reloading in a few seconds.")
+    st.stop()
 
 # ─── Layout ─────────────────────────────────────────────────────────────────
 # The left panel is now in the sidebar (collapsible/resizable like VS Code)
