@@ -6,11 +6,19 @@ except ImportError:
     pass
 
 import os
+import zipfile
+import glob
 
-# Auto-ingest dataset into ChromaDB if the database doesn't exist (Streamlit Cloud)
-if not os.path.exists("chroma_db") and os.path.exists("data/resumes_dataset.jsonl"):
-    from src.ingest import run_ingestion
-    run_ingestion()
+# Auto-reconstruct and extract chroma_db from split zip files (Streamlit Cloud)
+if not os.path.exists("chroma_db"):
+    parts = sorted(glob.glob("chroma_db.zip.part*"))
+    if parts:
+        with open("chroma_db.zip", "wb") as f_out:
+            for part in parts:
+                with open(part, "rb") as f_in:
+                    f_out.write(f_in.read())
+        with zipfile.ZipFile("chroma_db.zip", "r") as z:
+            z.extractall(".")
 
 import streamlit as st
 from src.state import HiringState
