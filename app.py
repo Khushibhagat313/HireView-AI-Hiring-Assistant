@@ -5,6 +5,13 @@ try:
 except ImportError:
     pass
 
+import os
+
+# Auto-ingest dataset into ChromaDB if the database doesn't exist (Streamlit Cloud)
+if not os.path.exists("chroma_db") and os.path.exists("data/resumes_dataset.jsonl"):
+    from src.ingest import run_ingestion
+    run_ingestion()
+
 import streamlit as st
 from src.state import HiringState
 

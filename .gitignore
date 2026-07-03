@@ -16,7 +16,7 @@ secrets.toml
 # Databases and datasets
 chroma_db/
 data/
-*.jsonl
+!data/resumes_dataset.jsonl
 *.csv
 *.db
 *.sqlite
