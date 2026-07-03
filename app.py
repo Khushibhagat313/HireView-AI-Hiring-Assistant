@@ -17,6 +17,18 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 .score-high { background: #d4edda; color: #155724; }
 .score-med  { background: #fff3cd; color: #856404; }
 .score-low  { background: #f8d7da; color: #721c24; }
+/* Left Panel Redesign */
+[data-testid="stSidebar"] { min-width: 300px !important; max-width: 300px !important; }
+[data-testid="stSidebar"] hr { display: none; }
+[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] {
+    border: none;
+    background-color: #fdfdfd;
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    margin-bottom: 15px;
+}
+[data-testid="stMetricValue"] { color: #4A7C6F; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,7 +53,8 @@ if "hiring_state" not in st.session_state:
         current_suggestions=[],
         filters_applied={"threshold": 0.35},
         feedback_cache={},
-        total_results=0
+        total_results=0,
+        search_only_candidates=[]
     )
 if "search_submitted" not in st.session_state:
     st.session_state.search_submitted = False
@@ -65,24 +78,27 @@ col2, col3 = st.columns([1.2, 1.5])
 # LEFT PANEL (Sidebar) — Stats, Filters, Upload
 # ════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
-    st.subheader("📊 Store Stats")
-    count = coll.count()
-    st.success(f"**{count}** resumes indexed")
+    with st.container(border=True):
+        st.markdown("### 📊 Store Stats")
+        count = coll.count()
+        cat_count = len(CATEGORY_LIST) + 1
+        c1, c2 = st.columns(2)
+        c1.metric("Resumes Indexed", count)
+        c2.metric("Categories Covered", cat_count)
 
-    st.divider()
-    st.subheader("🔧 Filters")
-    cat = st.selectbox("Category", ["All"] + sorted(CATEGORY_LIST))
-    threshold_pct = st.slider(
-        "Min Match %", min_value=0, max_value=100, value=35, step=5,
-        help="Semantic similarity threshold. 35-55% is typical for this model."
-    )
+    with st.container(border=True):
+        st.markdown("### 🎯 Smart Filters")
+        cat = st.selectbox("Category", ["All"] + sorted(CATEGORY_LIST))
+        threshold_pct = st.slider(
+            "Min Match %", min_value=0, max_value=100, value=35, step=5,
+            help="Semantic similarity threshold. 35-55% is typical for this model."
+        )
 
     new_filters = {"Category": cat, "threshold": threshold_pct / 100.0}
 
     if st.session_state.search_submitted:
         old_filters = st.session_state.hiring_state.get("filters_applied", {})
         st.session_state.hiring_state["filters_applied"] = new_filters
-        # If DB-level filters changed, re-retrieve
         if cat != old_filters.get("Category", "All"):
             from src.graph import retrieve_and_score_node
             with st.spinner("Applying filters..."):
@@ -92,40 +108,70 @@ with st.sidebar:
     else:
         st.session_state.hiring_state["filters_applied"] = new_filters
 
-    st.divider()
-    upload_container = st.container(border=True)
-    with upload_container:
-        st.markdown("### 📎 Upload Resumes")
+    with st.container(border=True):
+        st.markdown("### 📁 Upload Resumes")
         st.markdown("*Add new PDFs to immediately search against them.*")
         if "uploaded_cache" not in st.session_state:
             st.session_state.uploaded_cache = set()
+        if "search_only_candidates" not in st.session_state.hiring_state:
+            st.session_state.hiring_state["search_only_candidates"] = []
     
-        uploaded_files = st.file_uploader("Upload PDF resumes", type="pdf", accept_multiple_files=True, label_visibility="collapsed")
-    if uploaded_files:
-        from src.pdf_utils import extract_text
-        from src.vectorstore import add_documents
-        import time
-        new_docs, new_metas, new_ids = [], [], []
-        for uf in uploaded_files:
-            if uf.name not in st.session_state.uploaded_cache:
-                with st.spinner(f"Processing {uf.name}..."):
-                    text = extract_text(uf)
+        uploaded_file = st.file_uploader("Upload PDF resumes", type="pdf", accept_multiple_files=False, label_visibility="collapsed")
+        
+        if uploaded_file and uploaded_file.name not in st.session_state.uploaded_cache:
+            st.markdown(f"**📄 {uploaded_file.name}**")
+            b1, b2 = st.columns(2)
+            if b1.button("➕ Add to Store", use_container_width=True):
+                from src.pdf_utils import extract_text
+                from src.vectorstore import add_documents
+                from datetime import datetime
+                with st.spinner(f"Adding {uploaded_file.name} to store..."):
+                    text = extract_text(uploaded_file)
                     if text.strip():
-                        new_docs.append(f"Role: Unknown\n{text[:3000]}")
-                        new_metas.append({
-                            "ResumeID": uf.name,
-                            "Name": uf.name.replace(".pdf", ""),
-                            "Category": "Uploaded",
-                            "Source": "uploaded",
-                            "Email": "",
-                            "Location": ""
+                        add_documents(
+                            documents=[f"Role: Unknown\n{text[:3000]}"],
+                            metadatas=[{
+                                "ResumeID": uploaded_file.name,
+                                "Name": uploaded_file.name.replace(".pdf", ""),
+                                "Category": "Uploaded",
+                                "Source": "uploaded",
+                                "Email": "",
+                                "upload_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            }],
+                            ids=[uploaded_file.name]
+                        )
+                        st.session_state.uploaded_cache.add(uploaded_file.name)
+                        st.success(f"✅ {uploaded_file.name} added to store permanently")
+                        st.rerun()
+                        
+            if b2.button("🔍 Search Only", use_container_width=True):
+                from src.pdf_utils import extract_text
+                from src.vectorstore import get_embed_model
+                with st.spinner(f"Processing {uploaded_file.name} for search..."):
+                    text = extract_text(uploaded_file)
+                    if text.strip():
+                        doc_text = f"Role: Unknown\n{text[:3000]}"
+                        model = get_embed_model()
+                        # encode returns a numpy array, convert to list
+                        emb = model.encode([doc_text])[0].tolist()
+                        
+                        st.session_state.hiring_state["search_only_candidates"].append({
+                            "id": f"temp_{uploaded_file.name}",
+                            "document": doc_text,
+                            "metadata": {
+                                "Name": uploaded_file.name.replace(".pdf", ""),
+                                "Category": "Uploaded",
+                                "Source": "uploaded",
+                                "Email": ""
+                            },
+                            "embedding": emb,
+                            "score": 0.0,
+                            "score_pct": 0
                         })
-                        new_ids.append(uf.name)
-                        st.session_state.uploaded_cache.add(uf.name)
-        if new_docs:
-            add_documents(new_docs, new_metas, new_ids)
-            st.success(f"✅ Added {len(new_docs)} resume(s)")
-            st.rerun()
+                        st.session_state.uploaded_cache.add(uploaded_file.name)
+                        st.success(f"🔍 {uploaded_file.name} will be used for this search only")
+
+
 
 # ════════════════════════════════════════════════════════════════════════════
 # MIDDLE PANEL — JD Input + Results
@@ -228,8 +274,37 @@ with col2:
 # ════════════════════════════════════════════════════════════════════════════
 with col3:
     if not st.session_state.search_submitted:
-        st.header("💬 AI Assistant")
-        st.info("Run a search to start the AI-powered hiring assistant.")
+        st.markdown("""
+        <div style="background-color: #fdfdfd; padding: 25px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-top: 50px;">
+            <h3 style="color: #3B4F7A; margin-bottom: 20px;">💡 How HireView Works</h3>
+            
+            <div style="line-height: 1.6; font-size: 14px; margin-bottom: 25px;">
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #3B4F7A;">1. 📝 Enter a job description</strong><br>
+                    <span style="color: #666; margin-left: 22px;">Paste or fill the structured form</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #3B4F7A;">2. 🔍 Click Find Best Candidates</strong><br>
+                    <span style="color: #666; margin-left: 22px;">AI matches from 3,500+ resumes</span>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <strong style="color: #3B4F7A;">3. 👤 Click any candidate card</strong><br>
+                    <span style="color: #666; margin-left: 22px;">Get AI feedback and insights</span>
+                </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #eaeaea; margin: 20px 0; display: block !important;">
+            
+            <h4 style="color: #4A7C6F; margin-bottom: 15px;">✨ Things you can ask me:</h4>
+            <ul style="color: #4A7C6F; font-size: 14px; line-height: 1.8; list-style-type: none; padding-left: 0;">
+                <li>• "Compare top 3 candidates"</li>
+                <li>• "Who has the most experience?"</li>
+                <li>• "Find candidates strong in Python"</li>
+                <li>• "Validate how scores were calculated"</li>
+                <li>• "What are this candidate's gaps?"</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         selected = st.session_state.hiring_state.get("selected_candidate")
 

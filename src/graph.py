@@ -46,6 +46,22 @@ def retrieve_and_score_node(state: HiringState):
     # retrieval (fetch up to 100 candidates)
     candidates = query_resumes(jd_raw, n_results=100, threshold=0.0, where=where_clause)
     
+    search_only = state.get("search_only_candidates", [])
+    if search_only:
+        from src.scoring import cosine_similarity
+        for c in search_only:
+            if where_clause and "Category" in where_clause:
+                if c["metadata"].get("Category") != where_clause["Category"]:
+                    continue
+            sim = cosine_similarity(jd_emb, c["embedding"])
+            # c is a dict reference, we shouldn't modify it permanently in state if it changes next search, but it's fine for now, we just update score
+            c_copy = c.copy()
+            c_copy["score"] = sim
+            c_copy["score_pct"] = int(round(sim * 100))
+            candidates.append(c_copy)
+            
+    candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)
+    
     # scoring
     processed = []
     for c in candidates:
