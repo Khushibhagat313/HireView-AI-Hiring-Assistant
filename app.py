@@ -171,6 +171,14 @@ with st.sidebar:
                         st.session_state.uploaded_cache.add(uploaded_file.name)
                         st.success(f"🔍 {uploaded_file.name} will be used for this search only")
 
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='text-align: center; font-size: 13px; color: #555; margin-bottom: 20px;'>"
+        "Made by <b>KhushiBhagat</b><br>"
+        "<a href='https://www.linkedin.com/in/khushi-bhagat3103' target='_blank' style='color: #4A7C6F; text-decoration: none;'>https://www.linkedin.com/in/khushi-bhagat3103</a>"
+        "</div>", 
+        unsafe_allow_html=True
+    )
 
 
 # ════════════════════════════════════════════════════════════════════════════
