@@ -1,6 +1,6 @@
 # HireView - AI Hiring Assistant
 
-🔴 **Live Demo:** [Click here to view the live app on Streamlit Cloud](https://hireview-assistant.streamlit.app) *(Note: Add your actual Streamlit link here after deployment!)*
+🔴 **Live Demo:** [Click here to view the live app on Streamlit Cloud](https://huggingface.co/spaces/Khushi313/hireview)
 
 HireView is an intelligent, AI-powered hiring assistant that simplifies and accelerates the recruitment process. By leveraging advanced natural language processing and semantic search, it helps recruiters find the perfect candidates from large pools of resumes based on unstructured job descriptions.
 
